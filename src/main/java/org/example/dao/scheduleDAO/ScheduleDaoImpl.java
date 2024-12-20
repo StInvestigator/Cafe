@@ -14,7 +14,7 @@ import java.util.List;
 public class ScheduleDaoImpl implements ScheduleDao {
 
     private static final String SAVE_SCHEDULE = "INSERT INTO schedule(worker_id, date, start_time, end_time) VALUES(?, ?, ?, ?)";
-    private static final String FIND_ALL_SCHEDULES = "SELECT * FROM schedule";
+    private static final String FIND_ALL_SCHEDULES = "SELECT * FROM schedule ORDER BY id";
     private static final String DELETE_ALL_SCHEDULES = "DELETE FROM schedule";
     private static final String UPDATE_SCHEDULE = "UPDATE schedule SET worker_id = ?, date = ?, start_time = ?, end_time = ? WHERE id = ?";
     private static final String DELETE_SCHEDULE = "DELETE FROM schedule WHERE id = ?";

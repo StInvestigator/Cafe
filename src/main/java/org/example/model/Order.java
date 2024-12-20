@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class Order {
     private Long id;
     private long workerId;
+    private long waiterId;
     private long menuPositionId;
     private long receiptId;
     private float price;

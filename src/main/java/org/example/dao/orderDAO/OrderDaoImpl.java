@@ -2,6 +2,7 @@ package org.example.dao.orderDAO;
 
 import org.example.dao.ConnectionFactory;
 import org.example.exception.ConnectionDBException;
+import org.example.model.Client;
 import org.example.model.Order;
 
 import java.sql.Connection;
@@ -13,10 +14,13 @@ import java.util.List;
 
 public class OrderDaoImpl implements OrderDao {
 
-    private static final String SAVE_ORDER = "INSERT INTO orders(worker_id, menu_position_id, receipt_id, price) VALUES(?, ?, ?, ?)";
-    private static final String FIND_ALL_ORDERS = "SELECT * FROM orders";
+    private static final String SAVE_ORDER = "INSERT INTO orders(worker_id, menu_position_id, receipt_id, price, waiter_id) VALUES(?, ?, ?, ?, ?)";
+    private static final String FIND_ALL_ORDERS = "SELECT * FROM orders ORDER BY id";
+    private static final String FIND_ORDERS_BY_CLIENT_ID = "SELECT o.* " +
+            "FROM orders o JOIN receipts r ON o.receipt_id = r.id " +
+            "WHERE r.client_id = ? ORDER BY o.id";
     private static final String DELETE_ALL_ORDERS = "DELETE FROM orders";
-    private static final String UPDATE_ORDER = "UPDATE orders SET worker_id = ?, menu_position_id = ?, receipt_id = ?, price = ? WHERE id = ?";
+    private static final String UPDATE_ORDER = "UPDATE orders SET worker_id = ?, menu_position_id = ?, receipt_id = ?, price = ?, waiter_id = ? WHERE id = ?";
     private static final String DELETE_ORDER = "DELETE FROM orders WHERE id = ?";
 
     @Override
@@ -27,6 +31,7 @@ public class OrderDaoImpl implements OrderDao {
             ps.setLong(2, order.getMenuPositionId());
             ps.setLong(3, order.getReceiptId());
             ps.setFloat(4, order.getPrice());
+            ps.setLong(5, order.getWaiterId());
             ps.execute();
         } catch (ConnectionDBException | SQLException e) {
             System.err.println(e.getMessage());
@@ -43,6 +48,7 @@ public class OrderDaoImpl implements OrderDao {
                 ps.setLong(2, order.getMenuPositionId());
                 ps.setLong(3, order.getReceiptId());
                 ps.setFloat(4, order.getPrice());
+                ps.setLong(5, order.getWaiterId());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -59,7 +65,8 @@ public class OrderDaoImpl implements OrderDao {
             ps.setLong(2, order.getMenuPositionId());
             ps.setLong(3, order.getReceiptId());
             ps.setFloat(4, order.getPrice());
-            ps.setLong(5, order.getId());
+            ps.setLong(5, order.getWaiterId());
+            ps.setLong(6, order.getId());
             ps.execute();
         } catch (ConnectionDBException | SQLException e) {
             System.err.println(e.getMessage());
@@ -91,6 +98,7 @@ public class OrderDaoImpl implements OrderDao {
                 order.setMenuPositionId(result.getLong(3));
                 order.setReceiptId(result.getLong(4));
                 order.setPrice(result.getFloat(5));
+                order.setWaiterId(result.getLong(6));
                 resultOrders.add(order);
             }
             return resultOrders;
@@ -108,5 +116,29 @@ public class OrderDaoImpl implements OrderDao {
         } catch (ConnectionDBException | SQLException e) {
             System.err.println(e.getMessage());
         }
+    }
+
+    @Override
+    public List<Order> getOrdersByClient(Client client) {
+        List<Order> resultOrders = new ArrayList<>();
+        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
+             PreparedStatement ps = conn.prepareStatement(FIND_ORDERS_BY_CLIENT_ID)){
+            ps.setLong(1, client.getId());
+            ResultSet result = ps.executeQuery();
+            while (result.next()) {
+                Order order = new Order();
+                order.setId(result.getLong(1));
+                order.setWorkerId(result.getLong(2));
+                order.setMenuPositionId(result.getLong(3));
+                order.setReceiptId(result.getLong(4));
+                order.setPrice(result.getFloat(5));
+                order.setWaiterId(result.getLong(6));
+                resultOrders.add(order);
+            }
+            return resultOrders;
+        } catch (ConnectionDBException | SQLException e) {
+            System.err.println(e.getMessage());
+        }
+        return resultOrders;
     }
 }

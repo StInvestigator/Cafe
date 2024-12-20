@@ -16,10 +16,10 @@ public class WorkerDaoImpl implements WorkerDao {
     private static final String SAVE_WORKER = "INSERT INTO workers(name, surname, phone, email, position_id) " +
             "VALUES(?, ?, ?, ?, (SELECT id FROM work_positions WHERE name = ?))";
     private static final String FIND_ALL_WORKERS = "SELECT w.id, w.name, w.surname, w.phone, w.email, p.name as position " +
-            "FROM workers w JOIN work_positions p ON w.position_id = p.id";
+            "FROM workers w JOIN work_positions p ON w.position_id = p.id ORDER BY w.id";
     private static final String FIND_ALL_WORKERS_WITH_POSITION = "SELECT w.id, w.name, w.surname, w.phone, w.email, p.name as position " +
             "FROM workers w JOIN work_positions p ON w.position_id = p.id " +
-            "WHERE p.name = ?";
+            "WHERE p.name = ? ORDER BY w.id";
     private static final String DELETE_ALL_WORKERS = "DELETE FROM workers";
     private static final String UPDATE_WORKER = "UPDATE workers SET name = ?, surname = ?, phone = ?, email = ?, position_id = " +
             "(SELECT id FROM work_positions WHERE name = ?) WHERE id = ?";

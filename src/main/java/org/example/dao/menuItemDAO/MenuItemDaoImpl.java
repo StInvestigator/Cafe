@@ -17,14 +17,14 @@ public class MenuItemDaoImpl implements MenuItemDao {
             "VALUES(?, (SELECT id FROM menu_types WHERE menu_types.name = ?), ?)";
     private static final String FIND_ALL_MENU_ITEMS = "SELECT menu.id, menu.name, menu.price, " +
             "(SELECT menu_types.name FROM menu_types WHERE menu_types.id = menu.type_id) AS type " +
-            "FROM menu";
+            "FROM menu ORDER BY id";
     private static final String DELETE_ALL_MENU_ITEMS = "DELETE FROM menu";
     private static final String UPDATE_MENU_ITEM = "UPDATE menu SET name = ?, " +
             "type_id = (SELECT id FROM menu_types WHERE menu_types.name = ?), price = ? WHERE id = ?";
     private static final String DELETE_MENU_ITEM = "DELETE FROM menu WHERE id = ?";
     private static final String FIND_ALL_BY_TYPE = "SELECT m.id, m.name, m.price, mt.name AS type " +
             "FROM menu m JOIN menu_types mt ON mt.id = m.type_id " +
-            "WHERE mt.name = ?";
+            "WHERE mt.name = ? ORDER BY m.id";
 
     @Override
     public void save(MenuItem item) {

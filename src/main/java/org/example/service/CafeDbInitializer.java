@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,7 +43,7 @@ public class CafeDbInitializer {
     }
 
     public static void createTables() {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection()){
+        try (Connection conn = ConnectionFactory.getInstance().makeConnection()) {
 
 
             for (var tableName : TABLES_NAME_ARRAY) {
@@ -241,6 +242,7 @@ public class CafeDbInitializer {
         for (int i = 0; i < 20; i++) {
             Receipt receipt = new Receipt();
             receipt.setClientId(clients.get(RANDOM_GENERATOR.nextInt(clients.size())).getId());
+            receipt.setDate(new java.sql.Date(new java.util.Date().getTime()));
             receipts.add(receipt);
         }
         receiptDao.saveMany(receipts);
@@ -254,7 +256,8 @@ public class CafeDbInitializer {
         List<Receipt> receipts = receiptDao.findAll();
         List<MenuItem> menuItems = menuItemDao.findAll();
         List<Worker> baristas = workerDao.findAllWorkersWithPosition("Barista");
-        List<Worker> pastryChefs = workerDao.findAllWorkersWithPosition("Waiter");
+        List<Worker> pastryChefs = workerDao.findAllWorkersWithPosition("Pastry Chef");
+        List<Worker> waiters = workerDao.findAllWorkersWithPosition("Waiter");
 
         List<Order> orders = new ArrayList<>();
         int ordersCount = Math.round(receipts.size() * RANDOM_GENERATOR.nextFloat(1, 3));
@@ -269,7 +272,8 @@ public class CafeDbInitializer {
             } else {
                 order.setWorkerId(baristas.get(RANDOM_GENERATOR.nextInt(baristas.size())).getId());
             }
-            receipt.setTotalPrice(receipt.getTotalPrice()+menuPosition.getPrice());
+            order.setWaiterId(waiters.get(RANDOM_GENERATOR.nextInt(waiters.size())).getId());
+            receipt.setTotalPrice(receipt.getTotalPrice() + menuPosition.getPrice());
             orders.add(order);
         }
         ordersCount -= receipts.size();
@@ -287,7 +291,8 @@ public class CafeDbInitializer {
                 } else {
                     order.setWorkerId(baristas.get(RANDOM_GENERATOR.nextInt(baristas.size())).getId());
                 }
-                receipt.setTotalPrice(receipt.getTotalPrice()+menuPosition.getPrice());
+                order.setWaiterId(waiters.get(RANDOM_GENERATOR.nextInt(waiters.size())).getId());
+                receipt.setTotalPrice(receipt.getTotalPrice() + menuPosition.getPrice());
                 orders.add(order);
             }
             ordersCount -= ordersToAdd;

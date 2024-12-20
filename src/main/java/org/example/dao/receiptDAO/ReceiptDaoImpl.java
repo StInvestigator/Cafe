@@ -13,10 +13,10 @@ import java.util.List;
 
 public class ReceiptDaoImpl implements ReceiptDao {
 
-    private static final String SAVE_RECEIPT = "INSERT INTO receipts(client_id, total_price) VALUES(?, ?)";
-    private static final String FIND_ALL_RECEIPTS = "SELECT * FROM receipts";
+    private static final String SAVE_RECEIPT = "INSERT INTO receipts(client_id, total_price, date) VALUES(?, ?,?)";
+    private static final String FIND_ALL_RECEIPTS = "SELECT * FROM receipts ORDER BY id";
     private static final String DELETE_ALL_RECEIPTS = "DELETE FROM receipts";
-    private static final String UPDATE_RECEIPT = "UPDATE receipts SET client_id = ?, total_price = ? WHERE id = ?";
+    private static final String UPDATE_RECEIPT = "UPDATE receipts SET client_id = ?, total_price = ?, date = ? WHERE id = ?";
     private static final String DELETE_RECEIPT = "DELETE FROM receipts WHERE id = ?";
 
     @Override
@@ -25,6 +25,7 @@ public class ReceiptDaoImpl implements ReceiptDao {
              PreparedStatement ps = conn.prepareStatement(SAVE_RECEIPT)) {
             ps.setLong(1, receipt.getClientId());
             ps.setFloat(2, receipt.getTotalPrice());
+            ps.setDate(3, receipt.getDate());
             ps.execute();
         } catch (ConnectionDBException | SQLException e) {
             System.err.println(e.getMessage());
@@ -40,6 +41,7 @@ public class ReceiptDaoImpl implements ReceiptDao {
             for (Receipt receipt : receipts) {
                 ps.setLong(1, receipt.getClientId());
                 ps.setFloat(2, receipt.getTotalPrice());
+                ps.setDate(3, receipt.getDate());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -54,7 +56,8 @@ public class ReceiptDaoImpl implements ReceiptDao {
              PreparedStatement ps = conn.prepareStatement(UPDATE_RECEIPT)) {
             ps.setLong(1, receipt.getClientId());
             ps.setFloat(2, receipt.getTotalPrice());
-            ps.setLong(3, receipt.getId());
+            ps.setDate(3, receipt.getDate());
+            ps.setLong(4, receipt.getId());
             ps.execute();
         } catch (ConnectionDBException | SQLException e) {
             System.err.println(e.getMessage());
@@ -84,6 +87,7 @@ public class ReceiptDaoImpl implements ReceiptDao {
                 receipt.setId(result.getLong(1));
                 receipt.setClientId(result.getLong(2));
                 receipt.setTotalPrice(result.getFloat(3));
+                receipt.setDate(result.getDate(4));
                 resultReceipts.add(receipt);
             }
             return resultReceipts;

@@ -14,7 +14,7 @@ import java.util.List;
 public class ClientDaoImpl implements ClientDao {
 
     private static final String SAVE_CLIENT = "INSERT INTO clients(name, surname, phone, email, birthday, discount) VALUES(?,?,?,?,?,?)";
-    private static final String FIND_ALL_CLIENTS = "SELECT * FROM clients";
+    private static final String FIND_ALL_CLIENTS = "SELECT * FROM clients ORDER BY id";
     private static final String DELETE_ALL_CLIENTS = "DELETE FROM clients";
     private static final String UPDATE_CLIENT = "UPDATE clients SET name = ?, surname = ?, phone = ?, email = ?, birthday = ?, discount = ? " +
             " WHERE clients.id = ? ";

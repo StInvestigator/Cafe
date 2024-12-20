@@ -1,10 +1,19 @@
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS receipts;
+DROP TABLE IF EXISTS menu;
+DROP TABLE IF EXISTS menu_types;
+DROP TABLE IF EXISTS schedule;
+DROP TABLE IF EXISTS workers;
+DROP TABLE IF EXISTS work_positions;
+DROP TABLE IF EXISTS clients;
+
 CREATE TABLE IF NOT EXISTS public.menu_types
 (
     id SERIAL PRIMARY KEY,
     name character varying(30) UNIQUE NOT NULL
 )
 
-TABLESPACE pg_default;
+    TABLESPACE pg_default;
 
 CREATE TABLE IF NOT EXISTS public.menu
 (
@@ -15,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.menu
     FOREIGN KEY (type_id) REFERENCES menu_types (id)  ON DELETE CASCADE
 )
 
-TABLESPACE pg_default;
+    TABLESPACE pg_default;
 
 CREATE TABLE IF NOT EXISTS public.work_positions
 (
@@ -36,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.workers
     FOREIGN KEY (position_id) REFERENCES work_positions (id)  ON DELETE CASCADE
 )
 
-TABLESPACE pg_default;
+    TABLESPACE pg_default;
 
 CREATE TABLE IF NOT EXISTS public.clients
 (
@@ -49,7 +58,7 @@ CREATE TABLE IF NOT EXISTS public.clients
     discount DECIMAL(5,2) DEFAULT 0 CHECK (discount >= 0 AND discount <= 100)
 )
 
-TABLESPACE pg_default;
+    TABLESPACE pg_default;
 
 CREATE TABLE IF NOT EXISTS public.schedule
 (
@@ -61,7 +70,7 @@ CREATE TABLE IF NOT EXISTS public.schedule
     FOREIGN KEY (worker_id) REFERENCES workers (id)  ON DELETE CASCADE
 )
 
-TABLESPACE pg_default;
+    TABLESPACE pg_default;
 
 CREATE TABLE IF NOT EXISTS public.receipts
 (
@@ -72,7 +81,7 @@ CREATE TABLE IF NOT EXISTS public.receipts
     FOREIGN KEY (client_id) REFERENCES clients (id)  ON DELETE CASCADE
 )
 
-TABLESPACE pg_default;
+    TABLESPACE pg_default;
 
 CREATE TABLE IF NOT EXISTS public.orders
 (
@@ -88,17 +97,17 @@ CREATE TABLE IF NOT EXISTS public.orders
     FOREIGN KEY (waiter_id) REFERENCES workers (id)  ON DELETE CASCADE
 )
 
-TABLESPACE pg_default;
+    TABLESPACE pg_default;
 
 DO $$
-BEGIN
-IF NOT EXISTS (SELECT 1 FROM menu_types) THEN
-        INSERT INTO menu_types (name) VALUES
-        ('Drink'), ('Dessert');
-END IF;
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM menu_types) THEN
+            INSERT INTO menu_types (name) VALUES
+             ('Drink'), ('Dessert');
+        END IF;
 
-IF NOT EXISTS (SELECT 1 FROM work_positions) THEN
-        INSERT INTO work_positions (name) VALUES
-        ('Waiter'), ('Barista'), ('Pastry Chef');
-END IF;
-END $$;
+        IF NOT EXISTS (SELECT 1 FROM work_positions) THEN
+            INSERT INTO work_positions (name) VALUES
+            ('Waiter'), ('Barista'), ('Pastry Chef');
+        END IF;
+    END $$;
