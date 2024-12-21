@@ -97,17 +97,4 @@ CREATE TABLE IF NOT EXISTS public.orders
     FOREIGN KEY (waiter_id) REFERENCES workers (id)  ON DELETE CASCADE
 )
 
-    TABLESPACE pg_default;
-
-DO $$
-    BEGIN
-        IF NOT EXISTS (SELECT 1 FROM menu_types) THEN
-            INSERT INTO menu_types (name) VALUES
-             ('Drink'), ('Dessert');
-        END IF;
-
-        IF NOT EXISTS (SELECT 1 FROM work_positions) THEN
-            INSERT INTO work_positions (name) VALUES
-            ('Waiter'), ('Barista'), ('Pastry Chef');
-        END IF;
-    END $$;
+TABLESPACE pg_default;

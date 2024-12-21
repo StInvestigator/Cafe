@@ -39,8 +39,8 @@ public class ReceiptDaoTest {
         receiptDao.save(newReceipt);
 
         List<Receipt> allReceipts = receiptDao.findAll();
-        assertEquals(3, allReceipts.size()); // Проверяем, что добавился новый чек (изначально было 2)
-        Receipt insertedReceipt = allReceipts.get(2);
+        assertEquals(4, allReceipts.size()); // Проверяем, что добавился новый чек (изначально было 3)
+        Receipt insertedReceipt = allReceipts.get(3);
         assertEquals(1L, insertedReceipt.getClientId());
         assertEquals(200.0f, insertedReceipt.getTotalPrice());
         assertEquals(Date.valueOf("2024-12-21"), insertedReceipt.getDate());
@@ -66,13 +66,13 @@ public class ReceiptDaoTest {
         receiptDao.saveMany(newReceipts);
 
         List<Receipt> allReceipts = receiptDao.findAll();
-        assertEquals(4, allReceipts.size()); // Проверяем, что добавились 2 новых чека
+        assertEquals(5, allReceipts.size()); // Проверяем, что добавились 2 новых чека
     }
 
     @Test
     void findAll_ShouldReturnAllReceipts_WhenCalled() {
         List<Receipt> receipts = receiptDao.findAll();
-        assertEquals(2, receipts.size()); // Изначально в базе 2 чека
+        assertEquals(3, receipts.size()); // Изначально в базе 3 чека
     }
 
     @Test
@@ -97,13 +97,13 @@ public class ReceiptDaoTest {
     @Test
     void delete_ShouldRemoveReceipt_WhenCalled() {
         List<Receipt> receipts = receiptDao.findAll();
-        assertEquals(2, receipts.size()); // Изначально 2 чека
+        assertEquals(3, receipts.size()); // Изначально 3 чека
 
         Receipt receiptToDelete = receipts.get(0);
         receiptDao.delete(receiptToDelete);
 
         List<Receipt> updatedReceipts = receiptDao.findAll();
-        assertEquals(1, updatedReceipts.size()); // Проверяем, что чек удален
+        assertEquals(2, updatedReceipts.size()); // Проверяем, что чек удален
     }
 
     @Test

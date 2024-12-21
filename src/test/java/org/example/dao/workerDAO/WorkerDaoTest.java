@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -131,5 +132,15 @@ public class WorkerDaoTest {
         Worker worker = workersWithPosition.get(0);
         assertEquals("name1", worker.getName());
         assertEquals("surname1", worker.getSurname());
+    }
+
+    @Test
+    void findWorkersThatDidMenuTypeOnDate_ShouldReturnWorkersThaCookMenuTypeOnDate_WhenCalled() {
+        List<Worker> workers = workerDao.findWorkersThatDidMenuTypeOnDate("Drink", Date.valueOf("2024-12-20"));
+
+        assertEquals(1, workers.size()); // должен вернуться 1 работник
+        Worker worker = workers.get(0);
+        assertEquals("Barista", worker.getPosition()); // проверяем профессию
+        assertEquals("name2 surname2", worker.getName() + " " + worker.getSurname()); // проверяем корректность работника
     }
 }

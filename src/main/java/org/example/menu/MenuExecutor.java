@@ -87,7 +87,228 @@ public class MenuExecutor {
             if (choice == 8) {
                 printAllOrdersByClient();
             }
+            if (choice == 9) {
+                findMinDiscountForClient();
+            }
+            if (choice == 10) {
+                findMaxDiscountForClient();
+            }
+            if (choice == 11) {
+                findClientsWithMinDiscount();
+            }
+            if (choice == 12) {
+                findClientsWithMaxDiscount();
+            }
+            if (choice == 13) {
+                findAvgDiscountForClient();
+            }
+            if (choice == 14) {
+                findYoungestClients();
+            }
+            if (choice == 15) {
+                findOldestClients();
+            }
+            if (choice == 16) {
+                findClientsWithBirthday();
+            }
+            if (choice == 17) {
+                findClientsWithoutEmail();
+            }
+            if (choice == 18) {
+                findOrdersOnDate();
+            }
+            if (choice == 19) {
+                findOrdersBetweenDates();
+            }
+            if (choice == 20) {
+                findOrdersCountOnDateByType("Dessert");
+            }
+            if (choice == 21) {
+                findOrdersCountOnDateByType("Drink");
+            }
+            if (choice == 22) {
+                findClientsAndCooksThatDidOrdersOfTypeOnDate("Drink");
+            }
+            if (choice == 23) {
+                findAvgOrderPriceOnDate();
+            }
+            if (choice == 24) {
+                findMaxOrderPriceOnDate();
+            }
+            if (choice == 25) {
+                findClientsWithMaxOrderPriceOnDate();
+            }
+            if (choice == 26) {
+                findScheduleOfWorkerByPositionOnWeek("Barista");
+            }
+            if (choice == 27) {
+                findScheduleOfAllWorkersByPositionOnWeek("Barista");
+            }
+            if (choice == 28) {
+                findScheduleOnWeek();
+            }
         } while (choice != -1);
+    }
+
+    private static void findScheduleOfWorkerByPositionOnWeek(String position) {
+        WorkerDao workerDao = new WorkerDaoImpl();
+        ScheduleDao scheduleDao = new ScheduleDaoImpl();
+        List<Worker> workers = workerDao.findAllWorkersWithPosition(position);
+        int count = 1;
+        for (Worker worker : workers) {
+            System.out.println(count++ + ". " + "Worker`s name: " + worker.getName() + " " + worker.getSurname());
+        }
+        System.out.print("Choose worker number: ");
+        Scanner scanner = new Scanner(System.in);
+        long workerId = workers.get(scanner.nextInt() - 1).getId();
+        Date now = Date.valueOf(LocalDate.now());
+        Date weekAfter = Date.valueOf(LocalDate.now().plusWeeks(1));
+        for (Schedule schedule : scheduleDao.findAll().stream()
+                .filter(x -> x.getDate().getTime() >= now.getTime() &&
+                        x.getDate().getTime() <= weekAfter.getTime()
+                        && x.getWorkerId() == workerId)
+                .toList()) {
+            System.out.println(schedule);
+        }
+    }
+
+    private static void findScheduleOfAllWorkersByPositionOnWeek(String position) {
+        WorkerDao workerDao = new WorkerDaoImpl();
+        ScheduleDao scheduleDao = new ScheduleDaoImpl();
+        List<Long> workerIds = workerDao.findAllWorkersWithPosition(position).stream().map(Worker::getId).toList();
+        Date now = Date.valueOf(LocalDate.now());
+        Date weekAfter = Date.valueOf(LocalDate.now().plusWeeks(1));
+        for (Schedule schedule : scheduleDao.findAll().stream()
+                .filter(x -> x.getDate().getTime() >= now.getTime() &&
+                        x.getDate().getTime() <= weekAfter.getTime()
+                        && workerIds.contains(x.getWorkerId()))
+                .toList()) {
+            System.out.println(schedule);
+        }
+    }
+
+    private static void findScheduleOnWeek() {
+        ScheduleDao scheduleDao = new ScheduleDaoImpl();
+        Date now = Date.valueOf(LocalDate.now());
+        Date weekAfter = Date.valueOf(LocalDate.now().plusWeeks(1));
+        for (Schedule schedule : scheduleDao.findAll().stream()
+                .filter(x -> x.getDate().getTime() >= now.getTime() &&
+                        x.getDate().getTime() <= weekAfter.getTime())
+                .toList()) {
+            System.out.println(schedule);
+        }
+    }
+
+    private static void findClientsAndCooksThatDidOrdersOfTypeOnDate(String type) {
+        ClientDao clientDao = new ClientDaoImpl();
+        WorkerDao workerDao = new WorkerDaoImpl();
+        Date date = getDateFromUser();
+        System.out.println("Clients: ");
+        clientDao.findClientsThatOrderedMenuTypeOnDate(type, date).forEach(System.out::println);
+        System.out.println("Cooks: ");
+        workerDao.findWorkersThatDidMenuTypeOnDate(type, date).forEach(System.out::println);
+    }
+
+    private static void findAvgOrderPriceOnDate() {
+        OrderDao orderDao = new OrderDaoImpl();
+        float price = orderDao.findAvgPriceOnDate(getDateFromUser());
+        System.out.println("Avg Order Price: " + price);
+    }
+
+    private static void findMaxOrderPriceOnDate() {
+        OrderDao orderDao = new OrderDaoImpl();
+        float price = orderDao.findMaxPriceOnDate(getDateFromUser());
+        System.out.println("Max Order Price: " + price);
+    }
+
+    private static void findClientsWithMaxOrderPriceOnDate() {
+        ClientDao clientDao = new ClientDaoImpl();
+        clientDao.findClientsThatOrderedMaxPriceOnDate(getDateFromUser()).forEach(System.out::println);
+    }
+
+    private static void findOrdersOnDate() {
+        OrderDao orderDao = new OrderDaoImpl();
+        orderDao.findOrdersByDate(getDateFromUser())
+                .forEach(x -> OrderService.OrderToString(x, new MenuItemDaoImpl(), new WorkerDaoImpl()));
+    }
+
+    private static void findOrdersBetweenDates() {
+        OrderDao orderDao = new OrderDaoImpl();
+        Scanner scanner = new Scanner(System.in);
+        LocalDate dateStart = null;
+        LocalDate dateEnd = null;
+        boolean validDate = false;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        while (!validDate) {
+            try {
+                System.out.print("Enter a starting date (yyyy-MM-dd): ");
+                dateStart = LocalDate.parse(scanner.nextLine(), formatter);
+                System.out.print("Enter a ending date (yyyy-MM-dd): ");
+                dateEnd = LocalDate.parse(scanner.nextLine(), formatter);
+                if (dateEnd.isAfter(dateStart)) {
+                    validDate = true;
+                } else {
+                    throw new DateTimeParseException("Wrong input", dateStart.toString(), 0);
+                }
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid input. Please try again.");
+            }
+        }
+        orderDao.findOrdersBetweenDates(Date.valueOf(dateStart), Date.valueOf(dateEnd))
+                .forEach(x -> OrderService.OrderToString(x, new MenuItemDaoImpl(), new WorkerDaoImpl()));
+    }
+
+    private static void findOrdersCountOnDateByType(String type) {
+        OrderDao orderDao = new OrderDaoImpl();
+        int count = orderDao.findOrdersOnDateByMenuItemType(getDateFromUser(), type).size();
+        System.out.println("Orders count: " + count);
+    }
+
+    private static void findYoungestClients() {
+        ClientDao clientDao = new ClientDaoImpl();
+        clientDao.findYoungestClients().forEach(System.out::println);
+    }
+
+    private static void findOldestClients() {
+        ClientDao clientDao = new ClientDaoImpl();
+        clientDao.findOldestClients().forEach(System.out::println);
+    }
+
+    private static void findClientsWithBirthday() {
+        ClientDao clientDao = new ClientDaoImpl();
+        clientDao.findAll().stream().filter(x -> x.getBirthday().equals(getDateFromUser()))
+                .forEach(System.out::println);
+    }
+
+    private static void findClientsWithoutEmail() {
+        ClientDao clientDao = new ClientDaoImpl();
+        clientDao.findAll().stream().filter(x -> x.getEmail().isBlank())
+                .forEach(System.out::println);
+    }
+
+    private static void findMinDiscountForClient() {
+        ClientDao clientDao = new ClientDaoImpl();
+        System.out.println("Min discount: " + clientDao.findWithMinDiscount().get(0).getDiscount());
+    }
+
+    private static void findMaxDiscountForClient() {
+        ClientDao clientDao = new ClientDaoImpl();
+        System.out.println("Max discount: " + clientDao.findWithMaxDiscount().get(0).getDiscount());
+    }
+
+    private static void findClientsWithMinDiscount() {
+        ClientDao clientDao = new ClientDaoImpl();
+        clientDao.findWithMinDiscount().forEach(System.out::println);
+    }
+
+    private static void findClientsWithMaxDiscount() {
+        ClientDao clientDao = new ClientDaoImpl();
+        clientDao.findWithMaxDiscount().forEach(System.out::println);
+    }
+
+    private static void findAvgDiscountForClient() {
+        ClientDao clientDao = new ClientDaoImpl();
+        System.out.println("Avg discount: " + clientDao.findAvgDiscount());
     }
 
     private static void printAllMenuItemsByType(String type) {
@@ -151,7 +372,7 @@ public class MenuExecutor {
         System.out.print("Choose the client number: ");
         Client client = clients.get(scanner.nextInt() - 1);
         OrderDao orderDao = new OrderDaoImpl();
-        List<Order> orders = orderDao.getOrdersByClient(client);
+        List<Order> orders = orderDao.findOrdersByClient(client);
         for (Order order : orders) {
             System.out.println(OrderService.OrderToString(order, new MenuItemDaoImpl(), new WorkerDaoImpl()));
         }
@@ -160,21 +381,9 @@ public class MenuExecutor {
     private static void printScheduleOnDate() {
         ScheduleDao scheduleDao = new ScheduleDaoImpl();
         List<Schedule> schedules = scheduleDao.findAll();
-        Scanner scanner = new Scanner(System.in);
-        LocalDate date = null;
-        boolean validDate = false;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        while (!validDate) {
-            try {
-                System.out.print("Enter a date (yyyy-MM-dd): ");
-                date = LocalDate.parse(scanner.nextLine(), formatter);
-                validDate = true;
-            } catch (DateTimeParseException e) {
-                System.out.println("Invalid date format. Please try again.");
-            }
-        }
-        LocalDate finalDate = date;
-        for (Schedule schedule : schedules.stream().filter(x -> x.getDate().equals(Date.valueOf(finalDate))).toList()) {
+
+        Date date = getDateFromUser();
+        for (Schedule schedule : schedules.stream().filter(x -> x.getDate().equals(date)).toList()) {
             System.out.println(schedule);
         }
     }
@@ -737,6 +946,23 @@ public class MenuExecutor {
         for (Schedule schedule : schedules.stream().filter(x -> x.getDate().getTime() >= Date.valueOf(finalDateStart).getTime() && x.getDate().getTime() <= Date.valueOf(finalDateEnd).getTime()).toList()) {
             scheduleDao.delete(schedule);
         }
+    }
+
+    private static Date getDateFromUser() {
+        Scanner scanner = new Scanner(System.in);
+        LocalDate date = null;
+        boolean validDate = false;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        while (!validDate) {
+            try {
+                System.out.print("Enter a date (yyyy-MM-dd): ");
+                date = LocalDate.parse(scanner.nextLine(), formatter);
+                validDate = true;
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date format. Please try again.");
+            }
+        }
+        return Date.valueOf(date);
     }
 
     private MenuExecutor() {

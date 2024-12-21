@@ -7,7 +7,7 @@ import static java.lang.System.setProperty;
 
 public class CafeInitializer {
 
-    public void schoolInitialize() {
+    public void cafeInitialize() {
         setProperty("test", "false");
         try {
             CafeDbInitializer.createTables();

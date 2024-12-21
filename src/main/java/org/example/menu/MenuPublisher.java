@@ -16,6 +16,26 @@ public class MenuPublisher {
     private static final String FIND_SCHEDULE_ON_DATE_STRING = "Find schedule on date";
     private static final String FIND_ALL_ORDERS_BY_WAITER_STRING = "Find all orders that exact waiter received";
     private static final String FIND_ALL_ORDERS_BY_CLIENT_STRING = "Find all orders of exact client";
+    private static final String FIND_MIN_DISCOUNT_FOR_CLIENT_STRING = "Find minimum discount for a client";
+    private static final String FIND_MAX_DISCOUNT_FOR_CLIENT_STRING = "Find maximum discount for a client";
+    private static final String FIND_CLIENTS_WITH_MIN_DISCOUNT_STRING = "Find clients with minimum discount";
+    private static final String FIND_CLIENTS_WITH_MAX_DISCOUNT_STRING = "Find clients with maximum discount";
+    private static final String FIND_AVG_DISCOUNT_FOR_CLIENT_STRING = "Find average discount for a client";
+    private static final String FIND_YOUNGEST_CLIENTS_STRING = "Find youngest clients";
+    private static final String FIND_OLDEST_CLIENTS_STRING = "Find oldest clients";
+    private static final String FIND_CLIENTS_WITH_BIRTHDAY_STRING = "Find clients with birthdays";
+    private static final String FIND_CLIENTS_WITHOUT_EMAIL_STRING = "Find clients without email";
+    private static final String FIND_ORDERS_ON_DATE_STRING = "Find orders on a specific date";
+    private static final String FIND_ORDERS_BETWEEN_DATES_STRING = "Find orders between dates";
+    private static final String FIND_ORDERS_COUNT_ON_DATE_BY_DESSERT_STRING = "Find order count on a specific date for desserts";
+    private static final String FIND_ORDERS_COUNT_ON_DATE_BY_DRINK_STRING = "Find order count on a specific date for drinks";
+    private static final String FIND_CLIENTS_AND_COOKS_BY_ORDER_TYPE_ON_DATE_STRING = "Find clients and cooks for orders of type on date";
+    private static final String FIND_AVG_ORDER_PRICE_ON_DATE_STRING = "Find average order price on a specific date";
+    private static final String FIND_MAX_ORDER_PRICE_ON_DATE_STRING = "Find maximum order price on a specific date";
+    private static final String FIND_CLIENTS_WITH_MAX_ORDER_PRICE_ON_DATE_STRING = "Find clients with maximum order price on a specific date";
+    private static final String FIND_SCHEDULE_OF_WORKER_BY_POSITION_ON_WEEK_STRING = "Find schedule of a worker by position for the week";
+    private static final String FIND_SCHEDULE_OF_ALL_WORKERS_BY_POSITION_ON_WEEK_STRING = "Find schedule of all workers by position for the week";
+    private static final String FIND_SCHEDULE_ON_WEEK_STRING = "Find schedule for the week";
     private static final String ADD_OPTION_STRING = "Add new entity to the database";
     private static final String ADD_TO_MENU_STRING = "Add new item to the menu";
     private static final String ADD_WORKER_STRING = "Add new worker";
@@ -47,9 +67,6 @@ public class MenuPublisher {
     private static final String DOT_SPACE = ".  ";
     private static final String END_LINE = "\n";
 
-    private static final String LIST_OF_GROUPS = "List of groups";
-    private static final String LIST_OF_COURSES = "List of courses";
-
     public static void showMenu() {
         StringBuilder resultString = new StringBuilder();
         resultString.append(ACTION_STRING)
@@ -75,7 +92,20 @@ public class MenuPublisher {
                         FIND_ALL_DESSERTS_STRING, FIND_ALL_BARISTAS_STRING,
                         FIND_ALL_WAITERS_STRING, FIND_ALL_ORDERS_BY_MENU_STRING,
                         FIND_SCHEDULE_ON_DATE_STRING, FIND_ALL_ORDERS_BY_WAITER_STRING,
-                        FIND_ALL_ORDERS_BY_CLIENT_STRING)))
+                        FIND_ALL_ORDERS_BY_CLIENT_STRING, FIND_MIN_DISCOUNT_FOR_CLIENT_STRING,
+                        FIND_MAX_DISCOUNT_FOR_CLIENT_STRING, FIND_CLIENTS_WITH_MIN_DISCOUNT_STRING,
+                        FIND_CLIENTS_WITH_MAX_DISCOUNT_STRING, FIND_AVG_DISCOUNT_FOR_CLIENT_STRING,
+                        FIND_YOUNGEST_CLIENTS_STRING, FIND_OLDEST_CLIENTS_STRING,
+                        FIND_CLIENTS_WITH_BIRTHDAY_STRING, FIND_CLIENTS_WITHOUT_EMAIL_STRING,
+                        FIND_ORDERS_ON_DATE_STRING, FIND_ORDERS_BETWEEN_DATES_STRING,
+                        FIND_ORDERS_COUNT_ON_DATE_BY_DESSERT_STRING,
+                        FIND_ORDERS_COUNT_ON_DATE_BY_DRINK_STRING,
+                        FIND_CLIENTS_AND_COOKS_BY_ORDER_TYPE_ON_DATE_STRING,
+                        FIND_AVG_ORDER_PRICE_ON_DATE_STRING, FIND_MAX_ORDER_PRICE_ON_DATE_STRING,
+                        FIND_CLIENTS_WITH_MAX_ORDER_PRICE_ON_DATE_STRING,
+                        FIND_SCHEDULE_OF_WORKER_BY_POSITION_ON_WEEK_STRING,
+                        FIND_SCHEDULE_OF_ALL_WORKERS_BY_POSITION_ON_WEEK_STRING,
+                        FIND_SCHEDULE_ON_WEEK_STRING)))
                 .append(-1)
                 .append(DOT_SPACE)
                 .append(BACK_STRING)

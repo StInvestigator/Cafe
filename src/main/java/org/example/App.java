@@ -11,7 +11,7 @@ public class App
         System.setProperty("test", "false");
 
         CafeInitializer cafe = new CafeInitializer();
-        cafe.schoolInitialize();
+        cafe.cafeInitialize();
         startMenu();
     }
 }
