@@ -28,7 +28,7 @@ public class OrderServiceTest {
     private static final MenuItemDao menuItemDao = mock(MenuItemDaoImpl.class);
     private static final WorkerDao workerDao = mock(WorkerDaoImpl.class);
     @BeforeAll
-    static void initTestDB() {
+    static void initMock() {
         when(orderDao.findAll()).thenReturn(createMockOrders());
         when(menuItemDao.findAll()).thenReturn(createMockMenuItems());
         when(workerDao.findAll()).thenReturn(createMockWorkers());
