@@ -1,13 +1,20 @@
 package org.example.dao.clientDAO;
 
-import org.example.dao.ConnectionFactory;
 import org.example.exception.ConnectionDBException;
 import org.example.model.Client;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class ClientDaoImpl implements ClientDao {
 
     private static final String SAVE_CLIENT = "INSERT INTO clients(name, surname, phone, email, birthday, discount) VALUES(?,?,?,?,?,?)";
@@ -42,191 +49,139 @@ public class ClientDaoImpl implements ClientDao {
             " WHERE clients.id = ? ";
     private static final String DELETE_CLIENT = "DELETE FROM clients WHERE clients.id = ?";
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private RowMapper<Client> clientRowMapper;
+
+    @Autowired
+    private RowMapper<Float> floatRowMapper;
+
     @Override
     public void save(Client item) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(SAVE_CLIENT)) {
-            ps.setString(1, item.getName());
-            ps.setString(2, item.getSurname());
-            ps.setString(3, item.getPhone());
-            ps.setString(4, item.getEmail());
-            ps.setDate(5, item.getBirthday());
-            ps.setFloat(6, item.getDiscount());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
-            throw new RuntimeException();
+        try {
+            jdbcTemplate.update(SAVE_CLIENT, item.getName(), item.getSurname(), item.getPhone(), item.getEmail(), item.getBirthday(), item.getDiscount());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public void saveMany(List<Client> items) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(SAVE_CLIENT)) {
-            for (Client currentClient : items) {
-                ps.setString(1, currentClient.getName());
-                ps.setString(2, currentClient.getSurname());
-                ps.setString(3, currentClient.getPhone());
-                ps.setString(4, currentClient.getEmail());
-                ps.setDate(5, currentClient.getBirthday());
-                ps.setFloat(6, currentClient.getDiscount());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
-        }
+        jdbcTemplate.batchUpdate(SAVE_CLIENT,
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setString(1, items.get(i).getName());
+                        ps.setString(2, items.get(i).getSurname());
+                        ps.setString(3, items.get(i).getPhone());
+                        ps.setString(4, items.get(i).getEmail());
+                        ps.setDate(5, items.get(i).getBirthday());
+                        ps.setFloat(6, items.get(i).getDiscount());
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return items.size();
+                    }
+                });
     }
 
     @Override
     public void update(Client item) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(UPDATE_CLIENT)) {
-            ps.setString(1, item.getName());
-            ps.setString(2, item.getSurname());
-            ps.setString(3, item.getPhone());
-            ps.setString(4, item.getEmail());
-            ps.setDate(5, item.getBirthday());
-            ps.setFloat(6, item.getDiscount());
-            ps.setLong(7, item.getId());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(UPDATE_CLIENT, item.getName(), item.getSurname(), item.getPhone(),
+                    item.getEmail(), item.getBirthday(), item.getDiscount(), item.getId());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public void delete(Client item) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_CLIENT)) {
-            ps.setLong(1, item.getId());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(DELETE_CLIENT, item.getId());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Client> findAll() {
         return findAllByQuery(FIND_ALL_CLIENTS);
     }
 
     @Override
     public void deleteAll() {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_ALL_CLIENTS)) {
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(DELETE_ALL_CLIENTS);
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Client> findWithMinDiscount() {
         return findAllByQuery(FIND_WITH_MIN_DISCOUNT);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Client> findWithMaxDiscount() {
         return findAllByQuery(FIND_WITH_MAX_DISCOUNT);
     }
 
     @Override
     public Float findAvgDiscount() {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_AVG_DISCOUNT);
-             ResultSet result = ps.executeQuery()) {
-            result.next();
-            return result.getFloat(1);
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_AVG_DISCOUNT, floatRowMapper).get(0);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
         return 0f;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Client> findYoungestClients() {
         return findAllByQuery(FIND_WITH_MAX_BIRTHDAY);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Client> findOldestClients() {
         return findAllByQuery(FIND_WITH_MIN_BIRTHDAY);
     }
 
     @Override
     public List<Client> findClientsThatOrderedMenuTypeOnDate(String type, Date date) {
-        List<Client> resultClients = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_THAT_ORDERED_MENU_TYPE_AND_DATE)) {
-            ps.setString(1, type);
-            ps.setDate(2, date);
-            ResultSet result = ps.executeQuery();
-            while (result.next()) {
-                Client client = new Client();
-                client.setId(result.getLong(1));
-                client.setName(result.getString(2));
-                client.setSurname(result.getString(3));
-                client.setPhone(result.getString(4));
-                client.setEmail(result.getString(5));
-                client.setBirthday(result.getDate(6));
-                client.setDiscount(result.getFloat(7));
-                resultClients.add(client);
-            }
-            return resultClients;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_THAT_ORDERED_MENU_TYPE_AND_DATE, clientRowMapper, type, date);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultClients;
+        return new ArrayList<>();
     }
 
     @Override
     public List<Client> findClientsThatOrderedMaxPriceOnDate(Date date) {
-        List<Client> resultClients = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_CLIENTS_THAT_ORDER_ON_MAX_PRICE_ON_DATE)) {
-            ps.setDate(1, date);
-            ps.setDate(2, date);
-            ResultSet result = ps.executeQuery();
-            while (result.next()) {
-                Client client = new Client();
-                client.setId(result.getLong(1));
-                client.setName(result.getString(2));
-                client.setSurname(result.getString(3));
-                client.setPhone(result.getString(4));
-                client.setEmail(result.getString(5));
-                client.setBirthday(result.getDate(6));
-                client.setDiscount(result.getFloat(7));
-                resultClients.add(client);
-            }
-            return resultClients;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_CLIENTS_THAT_ORDER_ON_MAX_PRICE_ON_DATE, clientRowMapper, date, date);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultClients;
+        return new ArrayList<>();
     }
 
     private List<Client> findAllByQuery(String query) {
-        List<Client> resultClients = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(query);
-             ResultSet result = ps.executeQuery()) {
-
-            while (result.next()) {
-                Client client = new Client();
-                client.setId(result.getLong(1));
-                client.setName(result.getString(2));
-                client.setSurname(result.getString(3));
-                client.setPhone(result.getString(4));
-                client.setEmail(result.getString(5));
-                client.setBirthday(result.getDate(6));
-                client.setDiscount(result.getFloat(7));
-                resultClients.add(client);
-            }
-            return resultClients;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(query, clientRowMapper);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultClients;
+        return new ArrayList<>();
     }
 }

@@ -2,22 +2,27 @@ package org.example.service;
 
 
 import org.example.exception.FileException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import static java.lang.System.setProperty;
 
+@Service
 public class CafeInitializer {
 
+    @Autowired
+    private CafeDbInitializer cafeDbInitializer;
+
     public void cafeInitialize() {
-        setProperty("test", "false");
         try {
-            CafeDbInitializer.createTables();
-            CafeDbInitializer.deleteAllRowsInDB();
-            CafeDbInitializer.createMenu();
-            CafeDbInitializer.createRandomClients();
-            CafeDbInitializer.createRandomWorkers();
-            CafeDbInitializer.createSchedule();
-            CafeDbInitializer.createRandomReceipts();
-            CafeDbInitializer.createRandomOrders();
+            cafeDbInitializer.createTables();
+            cafeDbInitializer.deleteAllRowsInDB();
+            cafeDbInitializer.createMenu();
+            cafeDbInitializer.createRandomClients();
+            cafeDbInitializer.createRandomWorkers();
+            cafeDbInitializer.createSchedule();
+            cafeDbInitializer.createRandomReceipts();
+            cafeDbInitializer.createRandomOrders();
         } catch (FileException e) {
             System.err.println(e.getMessage());
         }

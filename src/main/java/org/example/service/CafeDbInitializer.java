@@ -1,21 +1,17 @@
 package org.example.service;
 
-import org.example.dao.ConnectionFactory;
 import org.example.dao.clientDAO.ClientDao;
-import org.example.dao.clientDAO.ClientDaoImpl;
 import org.example.dao.menuItemDAO.MenuItemDao;
-import org.example.dao.menuItemDAO.MenuItemDaoImpl;
 import org.example.dao.orderDAO.OrderDao;
-import org.example.dao.orderDAO.OrderDaoImpl;
 import org.example.dao.receiptDAO.ReceiptDao;
-import org.example.dao.receiptDAO.ReceiptDaoImpl;
 import org.example.dao.scheduleDAO.ScheduleDao;
-import org.example.dao.scheduleDAO.ScheduleDaoImpl;
 import org.example.dao.workerDAO.WorkerDao;
-import org.example.dao.workerDAO.WorkerDaoImpl;
-import org.example.exception.ConnectionDBException;
 import org.example.exception.FileException;
 import org.example.model.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
 
 
 import java.io.IOException;
@@ -24,63 +20,76 @@ import java.nio.file.Paths;
 import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+@Service
 public class CafeDbInitializer {
 
-    private static final Random RANDOM_GENERATOR = new Random();
-    private static final List<String> TABLES_NAME_ARRAY;
-    private static final String SQL_SCRIPT_CREATE_TABLES;
+    @Value("${data.names}")
+    private String namesPath;
 
-    static {
-        SQL_SCRIPT_CREATE_TABLES = PropertyFactory.getInstance().getProperty().getProperty("db.sqlScriptCreateTables");
+    @Value("${data.surnames}")
+    private String surnamesPath;
 
-        String tablesNames = PropertyFactory.getInstance().getProperty().getProperty("db.tablesNames");
-        TABLES_NAME_ARRAY = Arrays.stream(tablesNames.split(",")).collect(Collectors.toList());
-    }
+    @Value("${data.emails}")
+    private String emailsPath;
 
-    public static void createTables() {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection()) {
+    @Value("${data.phone_numbers}")
+    private String phonePath;
 
+    @Value("${data.menu_desserts}")
+    private String menu_dessertsPath;
 
-            for (var tableName : TABLES_NAME_ARRAY) {
-                if (!tableExists(tableName)) {
+    @Value("${data.menu_drinks}")
+    private String menu_drinksPath;
 
-                    try (Stream<String> lineStream = Files.lines(Paths.get(SQL_SCRIPT_CREATE_TABLES))) {
-                        StringBuilder createTablesQuery = new StringBuilder();
+    @Value("${data.create_tables}")
+    private String create_tablesPath;
 
-                        for (var currentString : lineStream.collect(Collectors.toList())) {
-                            createTablesQuery.append(currentString).append(" ");
-                        }
+    @Autowired
+    private ClientDao clientDao;
 
-                        try (PreparedStatement ps = conn.prepareStatement(createTablesQuery.toString())) {
-                            ps.execute();
-                        }
+    @Autowired
+    private MenuItemDao menuItemDao;
 
-                    } catch (IOException exception) {
-                        throw new FileException("Error with createTables.sql");
-                    } catch (SQLException e) {
-                        System.err.println(e.getMessage());
-                    }
-                }
-            }
+    @Autowired
+    private OrderDao orderDao;
 
-        } catch (ConnectionDBException | FileException | SQLException e) {
-            System.err.println(e.getMessage());
+    @Autowired
+    private ReceiptDao receiptDao;
+
+    @Autowired
+    private ScheduleDao scheduleDao;
+
+    @Autowired
+    private  WorkerDao workerDao;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    private final Random RANDOM_GENERATOR = new Random();
+
+    public void createTables() {
+        List<String> tableStrings;
+        try {
+            tableStrings = Files.readAllLines(Paths.get(create_tablesPath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+
+        StringBuilder createTablesQuery = new StringBuilder();
+
+        for (var currentString : tableStrings) {
+            createTablesQuery.append(currentString);
+            createTablesQuery.append("\n");
+        }
+
+        String resStr = createTablesQuery.toString();
+
+        jdbcTemplate.execute(resStr);
     }
 
-    public static void deleteAllRowsInDB() {
-        ClientDao clientDao = new ClientDaoImpl();
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
-        OrderDao orderDao = new OrderDaoImpl();
-        ReceiptDao receiptDao = new ReceiptDaoImpl();
-        ScheduleDao scheduleDao = new ScheduleDaoImpl();
-        WorkerDao workerDao = new WorkerDaoImpl();
-
+    public void deleteAllRowsInDB() {
         clientDao.deleteAll();
         menuItemDao.deleteAll();
         orderDao.deleteAll();
@@ -89,7 +98,7 @@ public class CafeDbInitializer {
         workerDao.deleteAll();
     }
 
-    public static Date generateRandomBirthday(int minAge, int maxAge) {
+    public Date generateRandomBirthday(int minAge, int maxAge) {
         LocalDate currentDate = LocalDate.now();
         Random random = new Random();
 
@@ -101,17 +110,19 @@ public class CafeDbInitializer {
         return Date.valueOf(randomDate);
     }
 
-    public static void createRandomClients() throws FileException {
-        ClientDao clientDao = new ClientDaoImpl();
-
-        TxtFileReader txtFileReaderNames = new TxtFileReader("data.names");
-        List<String> randomNames = txtFileReaderNames.readFile();
-        TxtFileReader txtFileReaderSurnames = new TxtFileReader("data.surnames");
-        List<String> randomSurnames = txtFileReaderSurnames.readFile();
-        TxtFileReader txtFileReaderPhones = new TxtFileReader("data.phone_numbers");
-        List<String> randomPhones = txtFileReaderPhones.readFile();
-        TxtFileReader txtFileReaderEmails = new TxtFileReader("data.emails");
-        List<String> randomEmails = txtFileReaderEmails.readFile();
+    public void createRandomClients() {
+        List<String> randomNames;
+        List<String> randomSurnames;
+        List<String> randomPhones;
+        List<String> randomEmails;
+        try {
+            randomNames = Files.readAllLines(Paths.get(namesPath));
+            randomSurnames = Files.readAllLines(Paths.get(surnamesPath));
+            randomPhones = Files.readAllLines(Paths.get(phonePath));
+            randomEmails = Files.readAllLines(Paths.get(emailsPath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         List<Client> clients = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
@@ -129,13 +140,15 @@ public class CafeDbInitializer {
         clientDao.saveMany(clients);
     }
 
-    public static void createMenu() throws FileException {
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
-
-        TxtFileReader txtFileReaderDrinks = new TxtFileReader("data.menu_desserts");
-        List<String> randomDrinks = txtFileReaderDrinks.readFile();
-        TxtFileReader txtFileReaderDesserts = new TxtFileReader("data.menu_drinks");
-        List<String> randomDesserts = txtFileReaderDesserts.readFile();
+    public void createMenu() {
+        List<String> randomDrinks;
+        List<String> randomDesserts;
+        try {
+            randomDrinks = Files.readAllLines(Paths.get(menu_drinksPath));
+            randomDesserts = Files.readAllLines(Paths.get(menu_dessertsPath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         List<MenuItem> menuItems = new ArrayList<>();
         for (String randomDrink : randomDrinks) {
@@ -157,17 +170,19 @@ public class CafeDbInitializer {
         menuItemDao.saveMany(menuItems);
     }
 
-    public static void createRandomWorkers() throws FileException {
-        WorkerDao workerDao = new WorkerDaoImpl();
-
-        TxtFileReader txtFileReaderNames = new TxtFileReader("data.names");
-        List<String> randomNames = txtFileReaderNames.readFile();
-        TxtFileReader txtFileReaderSurnames = new TxtFileReader("data.surnames");
-        List<String> randomSurnames = txtFileReaderSurnames.readFile();
-        TxtFileReader txtFileReaderPhones = new TxtFileReader("data.phone_numbers");
-        List<String> randomPhones = txtFileReaderPhones.readFile();
-        TxtFileReader txtFileReaderEmails = new TxtFileReader("data.emails");
-        List<String> randomEmails = txtFileReaderEmails.readFile();
+    public void createRandomWorkers() throws FileException {
+        List<String> randomNames;
+        List<String> randomSurnames;
+        List<String> randomPhones;
+        List<String> randomEmails;
+        try {
+            randomNames = Files.readAllLines(Paths.get(namesPath));
+            randomSurnames = Files.readAllLines(Paths.get(surnamesPath));
+            randomPhones = Files.readAllLines(Paths.get(phonePath));
+            randomEmails = Files.readAllLines(Paths.get(emailsPath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         List<Worker> workers = new ArrayList<>();
         for (int i = 0; i < 45; i++) {
@@ -183,9 +198,7 @@ public class CafeDbInitializer {
         workerDao.saveMany(workers);
     }
 
-    public static void createSchedule() {
-        ScheduleDao scheduleDao = new ScheduleDaoImpl();
-        WorkerDao workerDao = new WorkerDaoImpl();
+    public void createSchedule() {
         List<Worker> baristas = workerDao.findAllWorkersWithPosition("Barista");
         List<Worker> waiters = workerDao.findAllWorkersWithPosition("Waiter");
         List<Worker> pastryChefs = workerDao.findAllWorkersWithPosition("Pastry Chef");
@@ -205,7 +218,7 @@ public class CafeDbInitializer {
 
     }
 
-    public static List<Schedule> generateShiftForWorkers(List<Worker> workers, Date date, int maxWorkersPerDay) {
+    public List<Schedule> generateShiftForWorkers(List<Worker> workers, Date date, int maxWorkersPerDay) {
         List<Schedule> shifts = new ArrayList<>();
         List<Worker> selectedWorkers = new ArrayList<>();
         while (selectedWorkers.size() < maxWorkersPerDay) {
@@ -233,9 +246,7 @@ public class CafeDbInitializer {
         return shifts;
     }
 
-    public static void createRandomReceipts() {
-        ReceiptDao receiptDao = new ReceiptDaoImpl();
-        ClientDao clientDao = new ClientDaoImpl();
+    public void createRandomReceipts() {
         List<Client> clients = clientDao.findAll();
 
         List<Receipt> receipts = new ArrayList<>();
@@ -248,11 +259,7 @@ public class CafeDbInitializer {
         receiptDao.saveMany(receipts);
     }
 
-    public static void createRandomOrders() {
-        OrderDao orderDao = new OrderDaoImpl();
-        ReceiptDao receiptDao = new ReceiptDaoImpl();
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
-        WorkerDao workerDao = new WorkerDaoImpl();
+    public void createRandomOrders() {
         List<Receipt> receipts = receiptDao.findAll();
         List<MenuItem> menuItems = menuItemDao.findAll();
         List<Worker> baristas = workerDao.findAllWorkersWithPosition("Barista");
@@ -302,18 +309,4 @@ public class CafeDbInitializer {
             receiptDao.update(receipt);
         }
     }
-
-    private static boolean tableExists(String tableName) throws ConnectionDBException {
-        try (Connection connection = ConnectionFactory.getInstance().makeConnection()) {
-            DatabaseMetaData meta = connection.getMetaData();
-            ResultSet resultSet = meta.getTables(null, null, tableName, new String[]{"TABLE"});
-            return resultSet.next();
-        } catch (SQLException exception) {
-            throw new ConnectionDBException("error connection to DB");
-        }
-    }
-
-    private CafeDbInitializer() {
-    }
-
 }

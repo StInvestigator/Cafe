@@ -1,17 +1,29 @@
 package org.example;
 
+import org.example.menu.MenuExecutor;
 import org.example.service.CafeInitializer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 
-import static org.example.menu.MenuExecutor.startMenu;
+@SpringBootApplication
+public class App {
 
-public class App
-{
-    public static void main( String[] args )
-    {
-        System.setProperty("test", "false");
+    @Autowired
+    private MenuExecutor menuExecutor;
 
-        CafeInitializer cafe = new CafeInitializer();
-        cafe.cafeInitialize();
-        startMenu();
+    @Autowired
+    private CafeInitializer cafeInitializer;
+
+    public static void main(String[] args) {
+        SpringApplication.run(App.class, args);
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void start() {
+        cafeInitializer.cafeInitialize();
+        menuExecutor.startMenu();
     }
 }

@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5437/cafe_test
+    username: sa
+    password: admin
+    driverClassName: org.postgresql.Driver
+
+data:
+  create_tables_test: src/test/resources/createTables.sql
+  insert_tables_test: src/test/resources/insertTables.sql

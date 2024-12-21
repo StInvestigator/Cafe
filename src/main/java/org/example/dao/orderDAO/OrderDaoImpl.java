@@ -1,14 +1,19 @@
 package org.example.dao.orderDAO;
 
-import org.example.dao.ConnectionFactory;
-import org.example.exception.ConnectionDBException;
 import org.example.model.Client;
 import org.example.model.Order;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class OrderDaoImpl implements OrderDao {
 
     private static final String SAVE_ORDER = "INSERT INTO orders(worker_id, menu_position_id, receipt_id, price, waiter_id) VALUES(?, ?, ?, ?, ?)";
@@ -38,208 +43,128 @@ public class OrderDaoImpl implements OrderDao {
     private static final String UPDATE_ORDER = "UPDATE orders SET worker_id = ?, menu_position_id = ?, receipt_id = ?, price = ?, waiter_id = ? WHERE id = ?";
     private static final String DELETE_ORDER = "DELETE FROM orders WHERE id = ?";
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private RowMapper<Order> orderRowMapper;
+
+    @Autowired
+    private RowMapper<Float> floatRowMapper;
+
     @Override
     public void save(Order order) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(SAVE_ORDER)) {
-            ps.setLong(1, order.getWorkerId());
-            ps.setLong(2, order.getMenuPositionId());
-            ps.setLong(3, order.getReceiptId());
-            ps.setFloat(4, order.getPrice());
-            ps.setLong(5, order.getWaiterId());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
-            throw new RuntimeException();
+        try {
+            jdbcTemplate.update(SAVE_ORDER, order.getWorkerId(), order.getMenuPositionId(),
+                    order.getReceiptId(), order.getPrice(), order.getWaiterId());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
-    public void saveMany(List<Order> orders) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(SAVE_ORDER)) {
-            for (Order order : orders) {
-                ps.setLong(1, order.getWorkerId());
-                ps.setLong(2, order.getMenuPositionId());
-                ps.setLong(3, order.getReceiptId());
-                ps.setFloat(4, order.getPrice());
-                ps.setLong(5, order.getWaiterId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
-        }
+    public void saveMany(List<Order> items) {
+        jdbcTemplate.batchUpdate(SAVE_ORDER,
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setLong(1, items.get(i).getWorkerId());
+                        ps.setLong(2, items.get(i).getMenuPositionId());
+                        ps.setLong(3, items.get(i).getReceiptId());
+                        ps.setFloat(4, items.get(i).getPrice());
+                        ps.setLong(5, items.get(i).getWaiterId());
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return items.size();
+                    }
+                });
     }
 
     @Override
     public void update(Order order) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(UPDATE_ORDER)) {
-            ps.setLong(1, order.getWorkerId());
-            ps.setLong(2, order.getMenuPositionId());
-            ps.setLong(3, order.getReceiptId());
-            ps.setFloat(4, order.getPrice());
-            ps.setLong(5, order.getWaiterId());
-            ps.setLong(6, order.getId());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(UPDATE_ORDER, order.getWorkerId(), order.getMenuPositionId(),
+                    order.getReceiptId(), order.getPrice(), order.getWaiterId(),order.getId());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public void delete(Order order) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_ORDER)) {
-            ps.setLong(1, order.getId());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(DELETE_ORDER,order.getId());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public List<Order> findAll() {
-        List<Order> resultOrders = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_ALL_ORDERS);
-             ResultSet result = ps.executeQuery()) {
-
-            while (result.next()) {
-                Order order = new Order();
-                order.setId(result.getLong(1));
-                order.setWorkerId(result.getLong(2));
-                order.setMenuPositionId(result.getLong(3));
-                order.setReceiptId(result.getLong(4));
-                order.setPrice(result.getFloat(5));
-                order.setWaiterId(result.getLong(6));
-                resultOrders.add(order);
-            }
-            return resultOrders;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_ALL_ORDERS, orderRowMapper);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultOrders;
+        return new ArrayList<>();
     }
 
     @Override
     public void deleteAll() {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_ALL_ORDERS)) {
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(DELETE_ALL_ORDERS);
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public List<Order> findOrdersByClient(Client client) {
-        List<Order> resultOrders = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_ORDERS_BY_CLIENT_ID)){
-            ps.setLong(1, client.getId());
-            ResultSet result = ps.executeQuery();
-            while (result.next()) {
-                Order order = new Order();
-                order.setId(result.getLong(1));
-                order.setWorkerId(result.getLong(2));
-                order.setMenuPositionId(result.getLong(3));
-                order.setReceiptId(result.getLong(4));
-                order.setPrice(result.getFloat(5));
-                order.setWaiterId(result.getLong(6));
-                resultOrders.add(order);
-            }
-            return resultOrders;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_ORDERS_BY_CLIENT_ID, orderRowMapper, client.getId());
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultOrders;
+        return new ArrayList<>();
     }
 
     @Override
     public List<Order> findOrdersByDate(Date date) {
-        List<Order> resultOrders = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_ORDERS_BY_DATE)){
-            ps.setDate(1, date);
-            ResultSet result = ps.executeQuery();
-            while (result.next()) {
-                Order order = new Order();
-                order.setId(result.getLong(1));
-                order.setWorkerId(result.getLong(2));
-                order.setMenuPositionId(result.getLong(3));
-                order.setReceiptId(result.getLong(4));
-                order.setPrice(result.getFloat(5));
-                order.setWaiterId(result.getLong(6));
-                resultOrders.add(order);
-            }
-            return resultOrders;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_ORDERS_BY_DATE, orderRowMapper, date);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultOrders;
+        return new ArrayList<>();
     }
 
     @Override
     public List<Order> findOrdersBetweenDates(Date start, Date end) {
-        List<Order> resultOrders = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_ORDERS_BETWEEN_DATES)){
-            ps.setDate(1, start);
-            ps.setDate(2, end);
-            ResultSet result = ps.executeQuery();
-            while (result.next()) {
-                Order order = new Order();
-                order.setId(result.getLong(1));
-                order.setWorkerId(result.getLong(2));
-                order.setMenuPositionId(result.getLong(3));
-                order.setReceiptId(result.getLong(4));
-                order.setPrice(result.getFloat(5));
-                order.setWaiterId(result.getLong(6));
-                resultOrders.add(order);
-            }
-            return resultOrders;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_ORDERS_BETWEEN_DATES, orderRowMapper, start, end);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultOrders;
+        return new ArrayList<>();
     }
 
     @Override
     public List<Order> findOrdersOnDateByMenuItemType(Date date, String type) {
-        List<Order> resultOrders = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_ORDERS_BY_DATE_AND_MENU_ITEM_TYPE)){
-            ps.setDate(1, date);
-            ps.setString(2, type);
-            ResultSet result = ps.executeQuery();
-            while (result.next()) {
-                Order order = new Order();
-                order.setId(result.getLong(1));
-                order.setWorkerId(result.getLong(2));
-                order.setMenuPositionId(result.getLong(3));
-                order.setReceiptId(result.getLong(4));
-                order.setPrice(result.getFloat(5));
-                order.setWaiterId(result.getLong(6));
-                resultOrders.add(order);
-            }
-            return resultOrders;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_ORDERS_BY_DATE_AND_MENU_ITEM_TYPE, orderRowMapper, date, type);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultOrders;
+        return new ArrayList<>();
     }
 
     @Override
     public Float findAvgPriceOnDate(Date date) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_AVG_PRICE_ON_DATE)){
-            ps.setDate(1, date);
-            ResultSet result = ps.executeQuery();
-            result.next();
-            return result.getFloat(1);
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_AVG_PRICE_ON_DATE, floatRowMapper, date).get(0);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
         return 0f;
@@ -247,13 +172,9 @@ public class OrderDaoImpl implements OrderDao {
 
     @Override
     public Float findMaxPriceOnDate(Date date) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_MAX_PRICE_ON_DATE)){
-            ps.setDate(1, date);
-            ResultSet result = ps.executeQuery();
-            result.next();
-            return result.getFloat(1);
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_MAX_PRICE_ON_DATE, floatRowMapper, date).get(0);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
         return 0f;

@@ -1,6 +1,7 @@
 package org.example.menu;
 
 import org.example.model.MenuItem;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 

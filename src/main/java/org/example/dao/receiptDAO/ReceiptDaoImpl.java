@@ -1,16 +1,19 @@
 package org.example.dao.receiptDAO;
 
-import org.example.dao.ConnectionFactory;
-import org.example.exception.ConnectionDBException;
 import org.example.model.Receipt;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class ReceiptDaoImpl implements ReceiptDao {
 
     private static final String SAVE_RECEIPT = "INSERT INTO receipts(client_id, total_price, date) VALUES(?, ?,?)";
@@ -19,91 +22,74 @@ public class ReceiptDaoImpl implements ReceiptDao {
     private static final String UPDATE_RECEIPT = "UPDATE receipts SET client_id = ?, total_price = ?, date = ? WHERE id = ?";
     private static final String DELETE_RECEIPT = "DELETE FROM receipts WHERE id = ?";
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private RowMapper<Receipt> receiptRowMapper;
+
     @Override
     public void save(Receipt receipt) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(SAVE_RECEIPT)) {
-            ps.setLong(1, receipt.getClientId());
-            ps.setFloat(2, receipt.getTotalPrice());
-            ps.setDate(3, receipt.getDate());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
-            throw new RuntimeException();
+        try {
+            jdbcTemplate.update(SAVE_RECEIPT, receipt.getClientId(), receipt.getTotalPrice(), receipt.getDate());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public void saveMany(List<Receipt> receipts) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(SAVE_RECEIPT)) {
+        jdbcTemplate.batchUpdate(SAVE_RECEIPT,
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setLong(1, receipts.get(i).getClientId());
+                        ps.setFloat(2, receipts.get(i).getTotalPrice());
+                        ps.setDate(3, receipts.get(i).getDate());
+                    }
 
-            for (Receipt receipt : receipts) {
-                ps.setLong(1, receipt.getClientId());
-                ps.setFloat(2, receipt.getTotalPrice());
-                ps.setDate(3, receipt.getDate());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
-        }
+                    @Override
+                    public int getBatchSize() {
+                        return receipts.size();
+                    }
+                });
     }
 
     @Override
     public void update(Receipt receipt) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(UPDATE_RECEIPT)) {
-            ps.setLong(1, receipt.getClientId());
-            ps.setFloat(2, receipt.getTotalPrice());
-            ps.setDate(3, receipt.getDate());
-            ps.setLong(4, receipt.getId());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(UPDATE_RECEIPT, receipt.getClientId(), receipt.getTotalPrice(),
+                    receipt.getDate(), receipt.getId());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public void delete(Receipt receipt) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_RECEIPT)) {
-            ps.setLong(1, receipt.getId());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(DELETE_RECEIPT, receipt.getId());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public List<Receipt> findAll() {
-        List<Receipt> resultReceipts = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_ALL_RECEIPTS);
-             ResultSet result = ps.executeQuery()) {
-
-            while (result.next()) {
-                Receipt receipt = new Receipt();
-                receipt.setId(result.getLong(1));
-                receipt.setClientId(result.getLong(2));
-                receipt.setTotalPrice(result.getFloat(3));
-                receipt.setDate(result.getDate(4));
-                resultReceipts.add(receipt);
-            }
-            return resultReceipts;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_ALL_RECEIPTS, receiptRowMapper);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultReceipts;
+        return new ArrayList<>();
     }
 
     @Override
     public void deleteAll() {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_ALL_RECEIPTS)) {
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(DELETE_ALL_RECEIPTS);
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 }

@@ -15,6 +15,8 @@ import org.example.dao.workerDAO.WorkerDao;
 import org.example.dao.workerDAO.WorkerDaoImpl;
 import org.example.model.*;
 import org.example.service.business.OrderService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -30,9 +32,28 @@ import java.util.Scanner;
 
 import static org.example.menu.MenuPublisher.*;
 
-
+@Service
 public class MenuExecutor {
-    public static void startMenu() {
+
+    @Autowired
+    private ClientDao clientDao;
+
+    @Autowired
+    private MenuItemDao menuItemDao;
+
+    @Autowired
+    private OrderDao orderDao;
+
+    @Autowired
+    private ReceiptDao receiptDao;
+
+    @Autowired
+    private ScheduleDao scheduleDao;
+
+    @Autowired
+    private  WorkerDao workerDao;
+
+    public void startMenu() {
         Scanner scanner = new Scanner(System.in);
         int choice;
 
@@ -55,7 +76,7 @@ public class MenuExecutor {
         } while (choice != -1);
     }
 
-    private static void startFindMenu() {
+    private void startFindMenu() {
         Scanner scanner = new Scanner(System.in);
         int choice;
 
@@ -150,9 +171,7 @@ public class MenuExecutor {
         } while (choice != -1);
     }
 
-    private static void findScheduleOfWorkerByPositionOnWeek(String position) {
-        WorkerDao workerDao = new WorkerDaoImpl();
-        ScheduleDao scheduleDao = new ScheduleDaoImpl();
+    private void findScheduleOfWorkerByPositionOnWeek(String position) {
         List<Worker> workers = workerDao.findAllWorkersWithPosition(position);
         int count = 1;
         for (Worker worker : workers) {
@@ -172,9 +191,7 @@ public class MenuExecutor {
         }
     }
 
-    private static void findScheduleOfAllWorkersByPositionOnWeek(String position) {
-        WorkerDao workerDao = new WorkerDaoImpl();
-        ScheduleDao scheduleDao = new ScheduleDaoImpl();
+    private void findScheduleOfAllWorkersByPositionOnWeek(String position) {
         List<Long> workerIds = workerDao.findAllWorkersWithPosition(position).stream().map(Worker::getId).toList();
         Date now = Date.valueOf(LocalDate.now());
         Date weekAfter = Date.valueOf(LocalDate.now().plusWeeks(1));
@@ -187,8 +204,7 @@ public class MenuExecutor {
         }
     }
 
-    private static void findScheduleOnWeek() {
-        ScheduleDao scheduleDao = new ScheduleDaoImpl();
+    private void findScheduleOnWeek() {
         Date now = Date.valueOf(LocalDate.now());
         Date weekAfter = Date.valueOf(LocalDate.now().plusWeeks(1));
         for (Schedule schedule : scheduleDao.findAll().stream()
@@ -199,9 +215,7 @@ public class MenuExecutor {
         }
     }
 
-    private static void findClientsAndCooksThatDidOrdersOfTypeOnDate(String type) {
-        ClientDao clientDao = new ClientDaoImpl();
-        WorkerDao workerDao = new WorkerDaoImpl();
+    private void findClientsAndCooksThatDidOrdersOfTypeOnDate(String type) {
         Date date = getDateFromUser();
         System.out.println("Clients: ");
         clientDao.findClientsThatOrderedMenuTypeOnDate(type, date).forEach(System.out::println);
@@ -209,31 +223,26 @@ public class MenuExecutor {
         workerDao.findWorkersThatDidMenuTypeOnDate(type, date).forEach(System.out::println);
     }
 
-    private static void findAvgOrderPriceOnDate() {
-        OrderDao orderDao = new OrderDaoImpl();
+    private  void findAvgOrderPriceOnDate() {
         float price = orderDao.findAvgPriceOnDate(getDateFromUser());
         System.out.println("Avg Order Price: " + price);
     }
 
-    private static void findMaxOrderPriceOnDate() {
-        OrderDao orderDao = new OrderDaoImpl();
+    private  void findMaxOrderPriceOnDate() {
         float price = orderDao.findMaxPriceOnDate(getDateFromUser());
         System.out.println("Max Order Price: " + price);
     }
 
-    private static void findClientsWithMaxOrderPriceOnDate() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private  void findClientsWithMaxOrderPriceOnDate() {
         clientDao.findClientsThatOrderedMaxPriceOnDate(getDateFromUser()).forEach(System.out::println);
     }
 
-    private static void findOrdersOnDate() {
-        OrderDao orderDao = new OrderDaoImpl();
+    private void findOrdersOnDate() {
         orderDao.findOrdersByDate(getDateFromUser())
                 .forEach(x -> OrderService.OrderToString(x, new MenuItemDaoImpl(), new WorkerDaoImpl()));
     }
 
-    private static void findOrdersBetweenDates() {
-        OrderDao orderDao = new OrderDaoImpl();
+    private void findOrdersBetweenDates() {
         Scanner scanner = new Scanner(System.in);
         LocalDate dateStart = null;
         LocalDate dateEnd = null;
@@ -258,75 +267,62 @@ public class MenuExecutor {
                 .forEach(x -> OrderService.OrderToString(x, new MenuItemDaoImpl(), new WorkerDaoImpl()));
     }
 
-    private static void findOrdersCountOnDateByType(String type) {
-        OrderDao orderDao = new OrderDaoImpl();
+    private void findOrdersCountOnDateByType(String type) {
         int count = orderDao.findOrdersOnDateByMenuItemType(getDateFromUser(), type).size();
         System.out.println("Orders count: " + count);
     }
 
-    private static void findYoungestClients() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void findYoungestClients() {
         clientDao.findYoungestClients().forEach(System.out::println);
     }
 
-    private static void findOldestClients() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void findOldestClients() {
         clientDao.findOldestClients().forEach(System.out::println);
     }
 
-    private static void findClientsWithBirthday() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void findClientsWithBirthday() {
         clientDao.findAll().stream().filter(x -> x.getBirthday().equals(getDateFromUser()))
                 .forEach(System.out::println);
     }
 
-    private static void findClientsWithoutEmail() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void findClientsWithoutEmail() {
         clientDao.findAll().stream().filter(x -> x.getEmail().isBlank())
                 .forEach(System.out::println);
     }
 
-    private static void findMinDiscountForClient() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void findMinDiscountForClient() {
         System.out.println("Min discount: " + clientDao.findWithMinDiscount().get(0).getDiscount());
     }
 
-    private static void findMaxDiscountForClient() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void findMaxDiscountForClient() {
         System.out.println("Max discount: " + clientDao.findWithMaxDiscount().get(0).getDiscount());
     }
 
-    private static void findClientsWithMinDiscount() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void findClientsWithMinDiscount() {
         clientDao.findWithMinDiscount().forEach(System.out::println);
     }
 
-    private static void findClientsWithMaxDiscount() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void findClientsWithMaxDiscount() {
         clientDao.findWithMaxDiscount().forEach(System.out::println);
     }
 
-    private static void findAvgDiscountForClient() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void findAvgDiscountForClient() {
         System.out.println("Avg discount: " + clientDao.findAvgDiscount());
     }
 
-    private static void printAllMenuItemsByType(String type) {
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
+    private void printAllMenuItemsByType(String type) {
         System.out.println("Result:");
         menuItemDao.findAllWithType(type).forEach(System.out::println);
         System.out.println("-".repeat(60));
     }
 
-    private static void printAllWorkersByPosition(String position) {
-        WorkerDao workerDao = new WorkerDaoImpl();
+    private void printAllWorkersByPosition(String position) {
         System.out.println("Result:");
         workerDao.findAllWorkersWithPosition(position).forEach(System.out::println);
         System.out.println("-".repeat(60));
     }
 
-    private static void printAllOrdersByMenuItem() {
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
+    private void printAllOrdersByMenuItem() {
         List<MenuItem> menuItems = menuItemDao.findAll();
         int counter = 1;
         for (MenuItem menuItem : menuItems) {
@@ -336,14 +332,12 @@ public class MenuExecutor {
         System.out.print("Choose the menu item number: ");
         MenuItem menuItem = menuItems.get(scanner.nextInt() - 1);
 
-        OrderDao orderDao = new OrderDaoImpl();
         for (Order order : orderDao.findAll().stream().filter(x -> x.getMenuPositionId() == menuItem.getId()).toList()) {
             System.out.println(OrderService.OrderToString(order, new MenuItemDaoImpl(), new WorkerDaoImpl()));
         }
     }
 
-    private static void printAllOrdersByWaiter() {
-        WorkerDao workerDao = new WorkerDaoImpl();
+    private void printAllOrdersByWaiter() {
         List<Worker> workers = workerDao.findAllWorkersWithPosition("Waiter");
         int counter = 1;
         for (Worker worker : workers) {
@@ -353,16 +347,13 @@ public class MenuExecutor {
         System.out.print("Choose the worker number: ");
         Worker worker = workers.get(scanner.nextInt() - 1);
 
-        OrderDao orderDao = new OrderDaoImpl();
         for (Order order : orderDao.findAll().stream().filter(x -> x.getWaiterId() == worker.getId()).toList()) {
             System.out.println(OrderService.OrderToString(order, new MenuItemDaoImpl(), new WorkerDaoImpl()));
         }
     }
 
-    private static void printAllOrdersByClient() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void printAllOrdersByClient() {
         List<Client> clients = clientDao.findAll();
-        ReceiptDao receiptDao = new ReceiptDaoImpl();
 
         int counter = 1;
         for (Client client : clients) {
@@ -371,15 +362,13 @@ public class MenuExecutor {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Choose the client number: ");
         Client client = clients.get(scanner.nextInt() - 1);
-        OrderDao orderDao = new OrderDaoImpl();
         List<Order> orders = orderDao.findOrdersByClient(client);
         for (Order order : orders) {
             System.out.println(OrderService.OrderToString(order, new MenuItemDaoImpl(), new WorkerDaoImpl()));
         }
     }
 
-    private static void printScheduleOnDate() {
-        ScheduleDao scheduleDao = new ScheduleDaoImpl();
+    private void printScheduleOnDate() {
         List<Schedule> schedules = scheduleDao.findAll();
 
         Date date = getDateFromUser();
@@ -388,7 +377,7 @@ public class MenuExecutor {
         }
     }
 
-    private static void startAddMenu() {
+    private void startAddMenu() {
         Scanner scanner = new Scanner(System.in);
         int choice;
 
@@ -415,10 +404,8 @@ public class MenuExecutor {
         } while (choice != -1);
     }
 
-    private static void addScheduleForDay(LocalDate day) {
+    private void addScheduleForDay(LocalDate day) {
         Scanner scanner = new Scanner(System.in);
-        ScheduleDao scheduleDao = new ScheduleDaoImpl();
-        WorkerDao workerDao = new WorkerDaoImpl();
 
         List<Worker> workers = workerDao.findAll();
 
@@ -445,10 +432,8 @@ public class MenuExecutor {
         }
     }
 
-    private static void addReceipt() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void addReceipt() {
         List<Client> clients = clientDao.findAll();
-        ReceiptDao receiptDao = new ReceiptDaoImpl();
         Receipt receipt = new Receipt();
 
         Scanner scanner = new Scanner(System.in);
@@ -475,13 +460,10 @@ public class MenuExecutor {
         receiptDao.save(receipt);
     }
 
-    private static void addOrder(String type, Receipt receipt) {
-        WorkerDao workerDao = new WorkerDaoImpl();
+    private void addOrder(String type, Receipt receipt) {
         List<Worker> waiters = workerDao.findAllWorkersWithPosition("Waiter");
         List<Worker> cooks = workerDao.findAllWorkersWithPosition(type.equals("Drink") ? "Barista" : "Pastry Chef");
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
         List<MenuItem> items = menuItemDao.findAllWithType(type);
-        OrderDao orderDao = new OrderDaoImpl();
 
         Order order = new Order();
 
@@ -514,7 +496,7 @@ public class MenuExecutor {
         orderDao.save(order);
     }
 
-    private static void addToMenu() {
+    private void addToMenu() {
         Scanner scanner = new Scanner(System.in);
         MenuItem menuItem = new MenuItem();
 
@@ -531,11 +513,10 @@ public class MenuExecutor {
         int choice = scanner.nextInt();
         menuItem.setType(choice == 1 ? "Drink" : "Dessert");
 
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
         menuItemDao.save(menuItem);
     }
 
-    private static void addWorker() {
+    private void addWorker() {
         Scanner scanner = new Scanner(System.in);
         Worker worker = new Worker();
 
@@ -559,11 +540,10 @@ public class MenuExecutor {
         int choice = scanner.nextInt();
         worker.setPosition(choice == 1 ? "Barista" : choice == 2 ? "Waiter" : "Pastry Chef");
 
-        WorkerDao workerDao = new WorkerDaoImpl();
         workerDao.save(worker);
     }
 
-    private static void addClient() {
+    private void addClient() {
         Scanner scanner = new Scanner(System.in);
         Client client = new Client();
 
@@ -590,11 +570,10 @@ public class MenuExecutor {
             System.out.println("Invalid date format. This information will be skipped");
         }
 
-        ClientDao clientDao = new ClientDaoImpl();
         clientDao.save(client);
     }
 
-    private static void startEditMenu() {
+    private void startEditMenu() {
         Scanner scanner = new Scanner(System.in);
         int choice;
 
@@ -630,13 +609,9 @@ public class MenuExecutor {
         } while (choice != -1);
     }
 
-    private static void editOrderInfo() {
-        OrderDao orderDao = new OrderDaoImpl();
+    private void editOrderInfo() {
         List<Order> orders = orderDao.findAll();
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
         List<MenuItem> items = menuItemDao.findAll();
-        WorkerDao workerDao = new WorkerDaoImpl();
-        ReceiptDao receiptDao = new ReceiptDaoImpl();
         List<Receipt> receipts = receiptDao.findAll();
 
         System.out.println(OrderService.allOrdersToString(new OrderDaoImpl(), new MenuItemDaoImpl(), new WorkerDaoImpl()));
@@ -676,10 +651,8 @@ public class MenuExecutor {
         receiptDao.update(receipt);
     }
 
-    private static void editScheduleForDay(LocalDate day) {
+    private void editScheduleForDay(LocalDate day) {
         Scanner scanner = new Scanner(System.in);
-        ScheduleDao scheduleDao = new ScheduleDaoImpl();
-        WorkerDao workerDao = new WorkerDaoImpl();
 
         List<Worker> workers = workerDao.findAll();
         List<Schedule> schedules = scheduleDao.findAll();
@@ -713,8 +686,7 @@ public class MenuExecutor {
         scheduleDao.update(schedule);
     }
 
-    private static void editPriceToMenuItemWithType(String type) {
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
+    private void editPriceToMenuItemWithType(String type) {
         List<MenuItem> items = menuItemDao.findAllWithType(type);
 
         int counter = 1;
@@ -731,8 +703,7 @@ public class MenuExecutor {
         menuItemDao.update(items.get(choice - 1));
     }
 
-    private static void editNameToMenuItemWithType(String type) {
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
+    private void editNameToMenuItemWithType(String type) {
         List<MenuItem> items = menuItemDao.findAllWithType(type);
 
         int counter = 1;
@@ -749,8 +720,7 @@ public class MenuExecutor {
         menuItemDao.update(items.get(choice - 1));
     }
 
-    private static void editEmailToWorkerWithPosition(String position) {
-        WorkerDao workerDao = new WorkerDaoImpl();
+    private void editEmailToWorkerWithPosition(String position) {
         List<Worker> workers = workerDao.findAllWorkersWithPosition(position);
         int counter = 1;
         for (Worker worker : workers) {
@@ -765,8 +735,7 @@ public class MenuExecutor {
         workerDao.update(workers.get(choice - 1));
     }
 
-    private static void editPhoneToWorkerWithPosition(String position) {
-        WorkerDao workerDao = new WorkerDaoImpl();
+    private void editPhoneToWorkerWithPosition(String position) {
         List<Worker> workers = workerDao.findAllWorkersWithPosition(position);
         int counter = 1;
         for (Worker worker : workers) {
@@ -781,8 +750,7 @@ public class MenuExecutor {
         workerDao.update(workers.get(choice - 1));
     }
 
-    private static void editClientDiscount() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void editClientDiscount() {
         List<Client> clients = clientDao.findAll();
         int counter = 1;
         for (Client client : clients) {
@@ -797,7 +765,7 @@ public class MenuExecutor {
         clientDao.update(clients.get(choice - 1));
     }
 
-    private static void startDeleteMenu() {
+    private void startDeleteMenu() {
         Scanner scanner = new Scanner(System.in);
         int choice;
 
@@ -832,8 +800,7 @@ public class MenuExecutor {
         } while (choice != -1);
     }
 
-    private static void deleteMenuItemWithType(String type) {
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
+    private void deleteMenuItemWithType(String type) {
         List<MenuItem> menuItems = menuItemDao.findAllWithType(type);
 
         int counter = 1;
@@ -845,8 +812,7 @@ public class MenuExecutor {
         menuItemDao.delete(menuItems.get(scanner.nextInt() - 1));
     }
 
-    private static void deleteWorkerWithPosition(String position) {
-        WorkerDao workerDao = new WorkerDaoImpl();
+    private void deleteWorkerWithPosition(String position) {
         List<Worker> workers = workerDao.findAllWorkersWithPosition(position);
 
         int counter = 1;
@@ -858,8 +824,7 @@ public class MenuExecutor {
         workerDao.delete(workers.get(scanner.nextInt() - 1));
     }
 
-    private static void deleteClient() {
-        ClientDao clientDao = new ClientDaoImpl();
+    private void deleteClient() {
         List<Client> clients = clientDao.findAll();
 
         int counter = 1;
@@ -871,17 +836,15 @@ public class MenuExecutor {
         clientDao.delete(clients.get(scanner.nextInt() - 1));
     }
 
-    private static void deleteOrder() {
+    private void deleteOrder() {
         System.out.println(OrderService.allOrdersToString(new OrderDaoImpl(), new MenuItemDaoImpl(), new WorkerDaoImpl()));
         Scanner scanner = new Scanner(System.in);
         System.out.print("Choose the order number to delete: ");
 
-        OrderDao orderDao = new OrderDaoImpl();
         orderDao.delete(orderDao.findAll().get(scanner.nextInt() - 1));
     }
 
-    private static void deleteOrdersByMenuItem() {
-        MenuItemDao menuItemDao = new MenuItemDaoImpl();
+    private void deleteOrdersByMenuItem() {
         List<MenuItem> menuItems = menuItemDao.findAll();
         int counter = 1;
         for (MenuItem menuItem : menuItems) {
@@ -891,14 +854,12 @@ public class MenuExecutor {
         System.out.print("Choose the menu item number to delete orders of: ");
         MenuItem menuItem = menuItems.get(scanner.nextInt() - 1);
 
-        OrderDao orderDao = new OrderDaoImpl();
         for (Order order : orderDao.findAll().stream().filter(x -> x.getMenuPositionId() == menuItem.getId()).toList()) {
             orderDao.delete(order);
         }
     }
 
-    private static void deleteScheduleWithDate() {
-        ScheduleDao scheduleDao = new ScheduleDaoImpl();
+    private void deleteScheduleWithDate() {
         List<Schedule> schedules = scheduleDao.findAll();
         Scanner scanner = new Scanner(System.in);
         LocalDate date = null;
@@ -919,7 +880,7 @@ public class MenuExecutor {
         }
     }
 
-    private static void deleteScheduleInBetweenDates() {
+    private void deleteScheduleInBetweenDates() {
         Scanner scanner = new Scanner(System.in);
         LocalDate dateStart = null;
         LocalDate dateEnd = null;
@@ -938,7 +899,6 @@ public class MenuExecutor {
                 System.out.println("Invalid input. Please try again.");
             }
         }
-        ScheduleDao scheduleDao = new ScheduleDaoImpl();
         List<Schedule> schedules = scheduleDao.findAll();
 
         LocalDate finalDateStart = dateStart;
@@ -948,7 +908,7 @@ public class MenuExecutor {
         }
     }
 
-    private static Date getDateFromUser() {
+    private Date getDateFromUser() {
         Scanner scanner = new Scanner(System.in);
         LocalDate date = null;
         boolean validDate = false;

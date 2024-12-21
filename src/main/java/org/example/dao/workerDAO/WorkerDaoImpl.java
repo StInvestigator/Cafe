@@ -1,13 +1,18 @@
 package org.example.dao.workerDAO;
 
-import org.example.dao.ConnectionFactory;
-import org.example.exception.ConnectionDBException;
 import org.example.model.Worker;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class WorkerDaoImpl implements WorkerDao {
 
     private static final String SAVE_WORKER = "INSERT INTO workers(name, surname, phone, email, position_id) " +
@@ -33,148 +38,98 @@ public class WorkerDaoImpl implements WorkerDao {
             "(SELECT id FROM work_positions WHERE name = ?) WHERE id = ?";
     private static final String DELETE_WORKER = "DELETE FROM workers WHERE id = ?";
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private RowMapper<Worker> workerRowMapper;
+
     @Override
     public void save(Worker worker) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(SAVE_WORKER)) {
-            ps.setString(1, worker.getName());
-            ps.setString(2, worker.getSurname());
-            ps.setString(3, worker.getPhone());
-            ps.setString(4, worker.getEmail());
-            ps.setString(5, worker.getPosition());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
-            throw new RuntimeException();
+        try {
+            jdbcTemplate.update(SAVE_WORKER, worker.getName(), worker.getSurname(), worker.getPhone(),
+                    worker.getEmail(), worker.getPosition());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public void saveMany(List<Worker> workers) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(SAVE_WORKER)) {
+        jdbcTemplate.batchUpdate(SAVE_WORKER,
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setString(1, workers.get(i).getName());
+                        ps.setString(2, workers.get(i).getSurname());
+                        ps.setString(3, workers.get(i).getPhone());
+                        ps.setString(4, workers.get(i).getEmail());
+                        ps.setString(5, workers.get(i).getPosition());
+                    }
 
-            for (Worker worker : workers) {
-                ps.setString(1, worker.getName());
-                ps.setString(2, worker.getSurname());
-                ps.setString(3, worker.getPhone());
-                ps.setString(4, worker.getEmail());
-                ps.setString(5, worker.getPosition());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
-        }
+                    @Override
+                    public int getBatchSize() {
+                        return workers.size();
+                    }
+                });
     }
 
     @Override
     public void update(Worker worker) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(UPDATE_WORKER)) {
-            ps.setString(1, worker.getName());
-            ps.setString(2, worker.getSurname());
-            ps.setString(3, worker.getPhone());
-            ps.setString(4, worker.getEmail());
-            ps.setString(5, worker.getPosition());
-            ps.setLong(6, worker.getId());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(UPDATE_WORKER, worker.getName(), worker.getSurname(), worker.getPhone(),
+                    worker.getEmail(), worker.getPosition(), worker.getId());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public void delete(Worker worker) {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_WORKER)) {
-            ps.setLong(1, worker.getId());
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(DELETE_WORKER, worker.getId());
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public List<Worker> findAll() {
-        List<Worker> resultWorkers = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_ALL_WORKERS);
-             ResultSet result = ps.executeQuery()) {
-
-            while (result.next()) {
-                Worker worker = new Worker();
-                worker.setId(result.getLong(1));
-                worker.setName(result.getString(2));
-                worker.setSurname(result.getString(3));
-                worker.setPhone(result.getString(4));
-                worker.setEmail(result.getString(5));
-                worker.setPosition(result.getString(6)); // Get position name
-                resultWorkers.add(worker);
-            }
-            return resultWorkers;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_ALL_WORKERS, workerRowMapper);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultWorkers;
+        return new ArrayList<>();
     }
 
     @Override
     public void deleteAll() {
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_ALL_WORKERS)) {
-            ps.execute();
-        } catch (ConnectionDBException | SQLException e) {
-            System.err.println(e.getMessage());
+        try {
+            jdbcTemplate.update(DELETE_ALL_WORKERS);
+        } catch (DataAccessException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public List<Worker> findAllWorkersWithPosition(String position) {
-        List<Worker> resultWorkers = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_ALL_WORKERS_WITH_POSITION)) {
-            ps.setString(1, position);
-            ResultSet result = ps.executeQuery();
-            while (result.next()) {
-                Worker worker = new Worker();
-                worker.setId(result.getLong(1));
-                worker.setName(result.getString(2));
-                worker.setSurname(result.getString(3));
-                worker.setPhone(result.getString(4));
-                worker.setEmail(result.getString(5));
-                worker.setPosition(result.getString(6)); // Get position name
-                resultWorkers.add(worker);
-            }
-            return resultWorkers;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_ALL_WORKERS_WITH_POSITION, workerRowMapper, position);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultWorkers;
+        return new ArrayList<>();
     }
 
     @Override
     public List<Worker> findWorkersThatDidMenuTypeOnDate(String type, Date date) {
-        List<Worker> resultWorkers = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().makeConnection();
-             PreparedStatement ps = conn.prepareStatement(FIND_WORKERS_THAT_COOKED_MENU_TYPE_IN_DATE)) {
-            ps.setString(1, type);
-            ps.setDate(2, date);
-            ResultSet result = ps.executeQuery();
-            while (result.next()) {
-                Worker worker = new Worker();
-                worker.setId(result.getLong(1));
-                worker.setName(result.getString(2));
-                worker.setSurname(result.getString(3));
-                worker.setPhone(result.getString(4));
-                worker.setEmail(result.getString(5));
-                worker.setPosition(result.getString(6)); // Get position name
-                resultWorkers.add(worker);
-            }
-            return resultWorkers;
-        } catch (ConnectionDBException | SQLException e) {
+        try {
+            return jdbcTemplate.query(FIND_WORKERS_THAT_COOKED_MENU_TYPE_IN_DATE,
+                    workerRowMapper, type, date);
+        } catch (DataAccessException e) {
             System.err.println(e.getMessage());
         }
-        return resultWorkers;
+        return new ArrayList<>();
     }
 }
